@@ -59,7 +59,7 @@ int main (int argc, char * argv[]) {
 	}
 	else if(!strcmp(argv[0] , "mkdir")){
 		if(argc ==1){
-		printf("빈칸 입력\n" );
+		printf("mkdir 빈칸\n" );
 		}
 		
 		else if(argc ==2)
@@ -79,6 +79,30 @@ int main (int argc, char * argv[]) {
 		}
 	
 	}
-	
+	else if(!strcmp(argv[0], "cat")){
+	FILE *fp;
+	char buf[255];
+	char *filename =NULL;
+	int line_number =0;
+	int cnt =1;
+	if(argc ==1){
+	printf("켓 빈칸 \n");
+	}
+	else{
+		while(cnt <argc){
+			filename =argv[cnt];
+			
+			fp= fopen(filename,"r");
+			if(fp==NULL){
+			printf("Can't open %s\n" ,filename);
+			}
+		while(fgets(buf,255,fp)!=NULL){
+			printf("%d%s",line_number++,buf);
+		}
+		fclose(fp);
+		cnt++;
+		}	
+	}
+	}
 	}
 }
