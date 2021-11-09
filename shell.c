@@ -4,14 +4,18 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 const char *prompt = "Shell : " ;
 
 
 int main (int argc, char * argv[]) {
-	char cut[] = "\n\t";
+	char cut[] = " \n";
 	char dirname[100];
 	char * pathvar;
+	FILE *fp;
+	char *filename = NULL;
+	char buf[255];
 
 	while(1){
 	char str[64];
@@ -80,11 +84,9 @@ int main (int argc, char * argv[]) {
 	
 	}
 	else if(!strcmp(argv[0], "cat")){
-	FILE *fp;
-	char buf[255];
-	char *filename =NULL;
 	int line_number =0;
-	int cnt =1;
+	int cnt =2;
+	
 	if(argc ==1){
 	printf("켓 빈칸 \n");
 	}
@@ -93,14 +95,17 @@ int main (int argc, char * argv[]) {
 			filename =argv[cnt];
 			
 			fp= fopen(filename,"r");
-			if(fp==NULL){
-			printf("Can't open %s\n" ,filename);
-			}
+		if(fp==NULL){
+		printf("Can't open %s\n" ,filename);
+		cnt++;
+		}
+		else{	
 		while(fgets(buf,255,fp)!=NULL){
 			printf("%d%s",line_number++,buf);
 		}
 		fclose(fp);
 		cnt++;
+		}
 		}	
 	}
 	}
