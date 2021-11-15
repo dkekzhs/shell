@@ -10,16 +10,7 @@
 
 const char *prompt = "Shell : " ;
 
-int countLine(char *name){
-FILE * fp;
-char c;
-int line =0;
-fp = fopen(name, "r");
-while((c=fgetc(fp))!=EOF)
-	if(c=='\n')line++;
-fclose(fp);
-return(line);
-}
+
 int main (int argc, char * argv[]) {
 	char cut[] = " \n";
 	char dirname[bufSize];
@@ -53,16 +44,16 @@ int main (int argc, char * argv[]) {
 
 		while(argv[argc] = strtok(NULL, cut))
 			argc++;
-		if(argv[0] != NULL){
+
+	
+
+		if(argv[0] != NULL){				
 			fp = fopen( history ,"a+");
-				historyCnt = countLine(history);		
-				fprintf(fp, "%d " , historyCnt);
-				for(i=0;i<argc;i++){
-				fprintf(fp," %s " , argv[i]);
-				}
-			fprintf(fp,"\n");
-			historyCnt++;
-			fclose(fp);
+			for(i=0;i<argc;i++){
+			fprintf(fp," %s " , argv[i]);
+			}
+		fprintf(fp,"\n");
+		fclose(fp);
 		}
 		if(!strcmp(argv[0], "exit"))		
 			return 0;
@@ -78,8 +69,9 @@ int main (int argc, char * argv[]) {
 		}
 		else if(!strcmp(argv[0] ,"history")){
 			fp= fopen(history,"r");
+			int line_number = 0;
 			while(fgets(buf,255,fp)!=NULL){
-				printf("%s",buf);
+				printf("%d %s",line_number++,buf);
 			}
 			fclose(fp);
 		
