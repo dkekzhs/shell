@@ -9,6 +9,17 @@
 #define bufSize 100
 
 const char *prompt = "Shell : " ;
+int printFile(char *name){
+	char buf[255];
+	FILE *fp;
+	int lineNumber =0;
+	fp = fopen(name , "r");
+	while(fgets(buf,255,fp) != NULL){
+		printf("%d %s ", lineNumber++,buf);
+	}
+	fclose(fp);
+
+}
 
 
 int main (int argc, char * argv[]) {
@@ -19,7 +30,6 @@ int main (int argc, char * argv[]) {
 	
 	FILE *fp;
 	char *filename = NULL;
-	char buf[255];
 
 	DIR * dir = NULL;
 	struct dirent * entry =NULL;
@@ -68,13 +78,7 @@ int main (int argc, char * argv[]) {
 
 		}
 		else if(!strcmp(argv[0] ,"history")){
-			fp= fopen(history,"r");
-			int line_number = 0;
-			while(fgets(buf,255,fp)!=NULL){
-				printf("%d %s",line_number++,buf);
-			}
-			fclose(fp);
-		
+			printFile(history);
 		}
 		else if(!strcmp(argv[0] ,"cd")){
 			if(argc <=1){
@@ -113,9 +117,9 @@ int main (int argc, char * argv[]) {
 
 		}
 		else if(!strcmp(argv[0], "cat")){
-			int line_number =0;
+			int lineNumber =0;
 			int cnt =1;
-
+			char buf[255];
 			if(argc <=1){
 				printf("켓 빈칸 \n");
 			}
@@ -129,10 +133,9 @@ int main (int argc, char * argv[]) {
 						cnt++;
 					}
 					else{	
-						while(fgets(buf,255,fp)!=NULL){
-							printf("%d%s",line_number++,buf);
+						while(fgets(buf,255,fp) != NULL){
+						printf("%d %s ", lineNumber++,buf);
 						}
-						fclose(fp);
 						cnt++;
 					}
 				}	
@@ -154,7 +157,40 @@ int main (int argc, char * argv[]) {
 			closedir(dir);
 			printf("\n");
 		}
+		else if(!strcmp(argv[0] , "chmod")){
+			char *end;
+			char mode[2]  = "0";
+			int modeOct =0;
+			
+			if(argc != 3){
+				printf("chmod 파일이름 명령어8진수 순서로  입력\n");
+			}
+			else if(access(argv[2] ,F_OK)!=0){
+				printf("chmod 할 파일존재없음\n");
+			}
+			
+			if(strchr(argv[1],'8') || strchr(argv[1],'9')){
+				printf("8진수 잘못된 숫자 입력\n");
+				continue;
+			}
+			else{
+				strcat(mode,argv[1]);
+				modeOct =strtol(mode,&end,8);//오류시 변환 0
+			}
 
+			if(modeOct == 0 || modeOct >777){
+				printf(" 권한은 숫자로 입력 또한 큰 숫자 입력 X\n");
+				continue;	
+			}
+
+			if(chmod(argv[2],modeOct)!=0){
+				printf("권한 바꾸기  실패\n");
+			}
+			else{
+				printf("권한 바꾸끼 성공 ^^\n");
+			}
+		
+		}
 
 
 	}
