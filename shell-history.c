@@ -15,19 +15,28 @@ int printFile(char *name){
 	int lineNumber =0;
 	fp = fopen(name , "r");
 	while(fgets(buf,255,fp) != NULL){
-		printf("%d %s ", lineNumber++,buf);
+		printf("%s ",buf);
 	}
 	fclose(fp);
 
 }
-
+int countLine(char *name){
+	FILE *fp;
+	char c;
+	int line =0;
+	fp = fopen(name,"r");
+	while((c=fgetc(fp))!=EOF)
+		if(c=='\n')line++;
+	fclose(fp);
+	return(line);
+}
 
 int main (int argc, char * argv[]) {
 	char cut[] = " \n";
 	char dirname[bufSize];
 	char * pathHome ,*his ="/history.txt";
 	char history[30]; 
-	
+	char historyCntChar[5];
 	FILE *fp;
 	char *filename = NULL;
 
@@ -42,28 +51,70 @@ int main (int argc, char * argv[]) {
 	while(1){
 		char str[64];
 
-
 		fputs(prompt, stdout);
 		fgets(str,sizeof(str) -1 ,stdin);
+		
+		if(strchr(str,'!')){			
+			argc =0;
+			char command[64];
+			argv[argc] = strtok(str," !");
+			int lineNumber=0;
+			char buf[255];
+			if(argv[0] == NULL)
+				continue;
+			strcpy(historyCntChar, argv[argc]);
+			historyCnt = atoi(historyCntChar);
+				if(historyCnt==0){ //atoi 오류 반환 0
+					continue;
+				}
+			fp = fopen(history,"r");
+			while(fgets(buf,255,fp) !=NULL){
+				lineNumber++;
+				if(historyCnt == lineNumber){
+					printf("%d번째 줄 : %s\n",historyCnt , buf);
+					strcpy(command, buf);
+					break;
+				}	
+			}	
+			fclose(fp);	
 
-		argc =0;
-		argv[argc++] = strtok(str,cut);
+			argc =0;
+			argv[argc++] = strtok(command,cut);
+			
+			if(argv[0] == NULL)
+				continue;
 
-		if(argv[0] == NULL)
-			continue;
-
-		while(argv[argc] = strtok(NULL, cut))
-			argc++;
-
-	
-
-		if(argv[0] != NULL){				
-			fp = fopen( history ,"a+");
-			for(i=0;i<argc;i++){
-			fprintf(fp," %s " , argv[i]);
+			while(argv[argc] = strtok(NULL, cut))
+				argc++;
+		
+			if(argv[0] != NULL && i<=100){ //일단 막아놈
+				fp = fopen( history ,"a+");
+				for(i=0;i<argc;i++){
+					fprintf(fp,"%s " , argv[i]);
+				}
+				fprintf(fp,"\n");
+				fclose(fp);
 			}
-		fprintf(fp,"\n");
-		fclose(fp);
+		}		
+		else{
+			argc =0;
+			argv[argc++] = strtok(str,cut);
+			
+			if(argv[0] == NULL)
+				continue;
+
+			while(argv[argc] = strtok(NULL, cut))
+				argc++;
+			
+		
+			if(argv[0] != NULL && i<=100){ //일단 막아놈
+				fp = fopen( history ,"a+");
+				for(i=0;i<argc;i++){
+					fprintf(fp,"%s " , argv[i]);
+				}
+				fprintf(fp,"\n");
+				fclose(fp);
+			}
 		}
 		if(!strcmp(argv[0], "exit"))		
 			return 0;
@@ -92,8 +143,6 @@ int main (int argc, char * argv[]) {
 				else 
 					printf("이동완료 \n");
 			}
-
-
 
 		}
 		else if(!strcmp(argv[0] , "mkdir")){
@@ -143,7 +192,6 @@ int main (int argc, char * argv[]) {
 
 		}
 		else if(!strcmp(argv[0] , "ls")){
-			int cnt =1;
 
 			getcwd(dirname,bufSize);
 			if((dir = opendir(dirname)) ==NULL  ){
