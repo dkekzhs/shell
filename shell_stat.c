@@ -5,13 +5,42 @@
 #include <sys/stat.h> 
 #include <sys/types.h> //파일 타입 확인하는거
 #include <dirent.h>
-#include <time.h>
-#include <grp.h>
-#include <pwd.h>
+#include <time.h> 
+#include <grp.h>  //gid
+#include <pwd.h>  //uid
+#include <fcntl.h> //ps
+#include <ctype.h> // ps
 
 #define bufSize 100
 
 const char *prompt = "Shell : " ;
+
+
+int modeGetChar(struct stat sb, char * szPer){
+	int i=0;
+	static short permition[9] = {0400,0200,0100,0040,0020,0010,0004,0002,0001};
+	char RW[] = "rwxrwxrwx";
+	
+	if((sb.st_mode & S_IFMT)  ==S_IFDIR ){
+		szPer[0] ='d';
+		for(i=0;i<9;i++){
+			if(sb.st_mode & permition[i])
+				szPer[i+1] = RW[i];
+			else szPer[i+1] = '-';
+	}
+	}
+	else{
+		szPer[0] ='-';
+		for(i=0;i<9;i++){
+
+		if(sb.st_mode & permition[i])
+		       	szPer[i] =RW[i];
+		else szPer[i] ='-';
+		}
+	}
+	printf("%s",szPer);
+	return 0;
+}
 int printFile(char *name){
 	char buf[255];
 	FILE *fp;
@@ -33,17 +62,15 @@ int countLine(char *name){
 	fclose(fp);
 	return(line);
 }
-
 int main (int argc, char * argv[]) {
 	char cut[] = " \n";
 	char dirname[bufSize];
 	char * pathHome ,*his ="/history.txt";
-	char history[30]; 
+	char history[30];
 	char historyCntChar[5];
 	FILE *fp, *copy;
 	char *filename = NULL;
-
-
+	
 	DIR * dir = NULL;
 	struct dirent * entry =NULL;
 	struct stat sb; 
@@ -54,6 +81,8 @@ int main (int argc, char * argv[]) {
 	pathHome = getenv("HOME");
 	strcpy(history , pathHome);
 	strcat(history , his);
+
+
 	while(1){
 		char str[64];
 
@@ -312,18 +341,6 @@ int main (int argc, char * argv[]) {
 			closedir(dir);
 		}
 		else if(!strcmp(argv[0] , "alias")){
-			char alias[64];
-			int cnt =0;
-			char  * alias2[100];
-			printf("%s ",argv[1]);
-				if(strchr(argv[1] ,'=')){
-					alias2[cnt++] = strtok(argv[1],"='");
-					while(alias2[cnt] = strtok(NULL, " '\n")){
-						printf("%s\n",alias2[cnt]);
-						cnt++;
-					}
-				}
-
 		}
 		else if(!strcmp(argv[0] ,"ln")){
 			if(argc != 3){
@@ -341,10 +358,12 @@ int main (int argc, char * argv[]) {
 		}
 		else if(!strcmp(argv[0] ,"stat")){
 			if(argc != 2 ){
-				fprintf(stderr, "Usage : %s <Pathname>\n",argv[0]);
+				printf("Usage : %s <Pathname>\n",argv[0]);
+				continue;
 			}
 			if(lstat(argv[1] , &sb) ==-1){
-				perror("lstat");
+				printf("파일 오류\n");
+				continue;
 			}
 			printf("File : %s \n", argv[1]);
 			printf("size : %lld     ", (long long)sb.st_size);
@@ -360,6 +379,9 @@ int main (int argc, char * argv[]) {
 				case S_IFSOCK : printf("socket\n"); break;
 				default : printf("unknown?\n"); break;
 			}
+			char szP[30];
+			memset(szP,0x00,sizeof(szP));
+			modeGetChar(sb,szP);
 			printf("Device : %ld     " ,(long)sb.st_dev);	
 			printf("I-node : %ld     ", (long) sb.st_ino);
 			printf("Link : %ld\n     ", (long) sb.st_nlink);
@@ -370,9 +392,16 @@ int main (int argc, char * argv[]) {
 			printf("Last file accress : %s" ,ctime(&sb.st_atime));
 			printf("Last file modification  : %s" ,ctime(&sb.st_mtime));
 		}
-	}
+		else if(!strcmp(argv[0] ,"ps")){
+			if(argc >=2 ){
+				printf("ps 인자 오류 \n");
+			}
+			else{
+			
+			}
+		}
+	}	
 }
-
 
 
 
