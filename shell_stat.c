@@ -76,6 +76,8 @@ int main (int argc, char * argv[]) {
 	FILE *fp, *copy;
 	char *filename = NULL;
 	
+	int chkOneWrite =1;
+
 	int aliasCnt= 0;
 	char * alias[5], aliasChar[64], *aliasCom[5][64];
 	strs STRING[5] ,STRING2[5];
@@ -95,7 +97,7 @@ int main (int argc, char * argv[]) {
 	
 	while(1){
 		char str[64];
-
+		chkOneWrite =1;
 		fputs(prompt, stdout);
 		fgets(str,sizeof(str) -1 ,stdin);
 		strcpy(aliasChar,str);
@@ -147,8 +149,7 @@ int main (int argc, char * argv[]) {
 				fclose(fp);
 			}
 			if(aliasCnt>0){
-				
-						char aliascopy[64];
+				char aliascopy[64];
 				for(i=0;i<aliasCnt;i++){
 					if(!strcmp(aliasCom[i][0],command)){
 						strcpy(aliascopy , aliasCom[i][1]);
@@ -156,11 +157,12 @@ int main (int argc, char * argv[]) {
 						argv[argc++] = strtok(aliascopy,cut);
 						while(argv[argc] = strtok(NULL,cut))
 							argc++;
-					
+						if(argv[0] !=NULL && historyMax<=100){	
 						fp = fopen( history ,"a+");
 						fprintf(fp,"%s " , aliasCom[i][0]);
 						fprintf(fp,"\n");
 						fclose(fp);
+						}
 					}
 				}
 			}
@@ -175,7 +177,7 @@ int main (int argc, char * argv[]) {
 				argc++;
 			if(aliasCnt >0){
 				
-						char aliascopy[64];
+				char aliascopy[64];
 				for(i=0;i<aliasCnt;i++){
 					if(!strcmp(aliasCom[i][0],str)){
 						strcpy(aliascopy , aliasCom[i][1]);
@@ -183,11 +185,12 @@ int main (int argc, char * argv[]) {
 						argv[argc++] = strtok(aliascopy,cut);
 						while(argv[argc] = strtok(NULL,cut))
 							argc++;
-					
+					if(argv[0] !=NULL && historyMax<=100){
 						fp = fopen( history ,"a+");
 						fprintf(fp,"%s " , aliasCom[i][0]);
 						fprintf(fp,"\n");
 						fclose(fp);
+					}
 					}
 				}
 			}
