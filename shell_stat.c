@@ -147,10 +147,13 @@ int main (int argc, char * argv[]) {
 				fclose(fp);
 			}
 			if(aliasCnt>0){
+				
+						char aliascopy[64];
 				for(i=0;i<aliasCnt;i++){
 					if(!strcmp(aliasCom[i][0],command)){
+						strcpy(aliascopy , aliasCom[i][1]);
 						argc =0;
-						argv[argc++] = strtok(aliasCom[i][1],cut);
+						argv[argc++] = strtok(aliascopy,cut);
 						while(argv[argc] = strtok(NULL,cut))
 							argc++;
 					
@@ -171,10 +174,13 @@ int main (int argc, char * argv[]) {
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
 			if(aliasCnt >0){
+				
+						char aliascopy[64];
 				for(i=0;i<aliasCnt;i++){
 					if(!strcmp(aliasCom[i][0],str)){
+						strcpy(aliascopy , aliasCom[i][1]);
 						argc =0;
-						argv[argc++] = strtok(aliasCom[i][1],cut);
+						argv[argc++] = strtok(aliascopy,cut);
 						while(argv[argc] = strtok(NULL,cut))
 							argc++;
 					
@@ -386,25 +392,51 @@ int main (int argc, char * argv[]) {
 					printf("%s" , alias[i]);
 				}
 			}
-			else{	
-				printf("%s ",aliasChar);
+			else{	int i=1,chk = 0;
 				strcpy(STRING[aliasCnt].strs,aliasChar);
-				if(strstr(STRING[aliasCnt].strs ,"='") && strstr(STRING[aliasCnt].strs,"\0")){
-					
+				if(strstr(STRING[aliasCnt].strs ,"='") && strstr(STRING[aliasCnt].strs,"'\0")){
 					strcpy(STRING2[aliasCnt].strs,STRING[aliasCnt].strs);
 					i=1;
 					aliasCom[aliasCnt][0] = strtok(STRING2[aliasCnt].strs , "='");
+					
+					if(aliasCnt == 0){	
 					while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
 						i++;
 					aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
-					if(strstr(aliasCom[aliasCnt][0]," ") !=NULL ){
+					if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
 						continue;
 					}
 					alias[aliasCnt] = STRING[aliasCnt].strs;
 					aliasCnt++;
-					
-				}			
-			}
+					}
+					else{
+					for(j=0;j<aliasCnt;j++){ //이미 있는 단축어인지 확인
+						if(!strcmp(aliasCom[j][0] , (STRING2[aliasCnt].strs+6))){ //들어온단축어와 원래있는게 있으면
+							while(aliasCom[j][i] = strtok(NULL, "'\n")) //단축어 자리에 명령어만 바꿈
+								i++;
+							
+							if(strstr(aliasCom[j][0]," ") !=NULL || aliasCom[j][1] == NULL ){
+								continue;
+							}
+							alias[j] = STRING[j].strs; //전체 명령어 자리에도 바꿔줌
+							
+						}
+						else{
+							while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
+								i++;
+							aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
+							if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
+								continue;
+							}
+
+							alias[aliasCnt] = STRING[aliasCnt].strs;
+							aliasCnt++;
+						}
+					}
+					}
+				
+				}
+			}			
 		}
 		
 		else if(!strcmp(argv[0] ,"ln")){
