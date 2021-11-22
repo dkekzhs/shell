@@ -15,6 +15,9 @@
 
 const char *prompt = "Shell : " ;
 
+typedef struct strs{
+	char strs[64];
+}strs;
 
 int modeGetChar(struct stat sb, char * szPer){
 	int i=0;
@@ -44,7 +47,7 @@ int modeGetChar(struct stat sb, char * szPer){
 int printFile(char *name){
 	char buf[255];
 	FILE *fp;
-	int lineNumber =0;
+	int lineNumber =1;
 	fp = fopen(name , "r");
 	while(fgets(buf,255,fp) != NULL){
 		printf("%d  %s",lineNumber++,buf);
@@ -56,12 +59,14 @@ int countLine(char *name){
 	FILE *fp;
 	char c;
 	int line =0;
-	fp = fopen(name,"r");
+	fp = fopen(name,"a+");
 	while((c=fgetc(fp))!=EOF)
 		if(c=='\n')line++;
 	fclose(fp);
 	return(line);
 }
+ 
+
 int main (int argc, char * argv[]) {
 	char cut[] = " \n";
 	char dirname[bufSize];
@@ -71,25 +76,32 @@ int main (int argc, char * argv[]) {
 	FILE *fp, *copy;
 	char *filename = NULL;
 	
+	int aliasCnt= 0;
+	char * alias[5], aliasChar[64], *aliasCom[5][64];
+	strs STRING[5] ,STRING2[5];
+
 	DIR * dir = NULL;
 	struct dirent * entry =NULL;
 	struct stat sb; 
 	int historyCnt = 0;
 	
-	int i,historyMax;
+	int i,j,historyMax;
 	
+
 	pathHome = getenv("HOME");
 	strcpy(history , pathHome);
 	strcat(history , his);
-
-
+	
+	
 	while(1){
 		char str[64];
 
 		fputs(prompt, stdout);
 		fgets(str,sizeof(str) -1 ,stdin);
-		
+		strcpy(aliasChar,str);
+	
 		historyMax = countLine(history);
+	
 		if(strchr(str,'!')){			
 			argc =0;
 			char command[64];
@@ -103,7 +115,7 @@ int main (int argc, char * argv[]) {
 			if(historyCnt==0){ //atoi 오류 반환 0
 				continue;
 				}
-			if(historyCnt >= historyMax){
+			if(historyCnt > historyMax){
 				printf("히스토리 라인넘긴 숫자 \n");
 				continue;
 				}
@@ -113,21 +125,20 @@ int main (int argc, char * argv[]) {
 				if(historyCnt == lineNumber){
 					printf("%d번째 줄 : %s\n",historyCnt , buf);
 					strcpy(command, buf);
+					strcpy(aliasChar,buf);
 					break;
 				}	
 			}	
 			fclose(fp);	
-
 			argc =0;
 			argv[argc++] = strtok(command,cut);
-			
 			if(argv[0] == NULL)
 				continue;
 
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
-		
-			if(argv[0] != NULL && historyMax<=100){ 
+			
+			 if(argv[0] != NULL && historyMax<=100){ 
 				fp = fopen( history ,"a+");
 				for(i=0;i<argc;i++){
 					fprintf(fp,"%s " , argv[i]);
@@ -135,19 +146,47 @@ int main (int argc, char * argv[]) {
 				fprintf(fp,"\n");
 				fclose(fp);
 			}
+			if(aliasCnt>0){
+				for(i=0;i<aliasCnt;i++){
+					if(!strcmp(aliasCom[i][0],command)){
+						argc =0;
+						argv[argc++] = strtok(aliasCom[i][1],cut);
+						while(argv[argc] = strtok(NULL,cut))
+							argc++;
+					
+						fp = fopen( history ,"a+");
+						fprintf(fp,"%s " , aliasCom[i][0]);
+						fprintf(fp,"\n");
+						fclose(fp);
+					}
+				}
+			}
 		}		
 		else{
 			argc =0;
 			argv[argc++] = strtok(str,cut);
-			
 			if(argv[0] == NULL)
 				continue;
 
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
-			
-		
-			if(argv[0] != NULL && historyMax<=100){ 
+			if(aliasCnt >0){
+				for(i=0;i<aliasCnt;i++){
+					if(!strcmp(aliasCom[i][0],str)){
+						argc =0;
+						argv[argc++] = strtok(aliasCom[i][1],cut);
+						while(argv[argc] = strtok(NULL,cut))
+							argc++;
+					
+						fp = fopen( history ,"a+");
+						fprintf(fp,"%s " , aliasCom[i][0]);
+						fprintf(fp,"\n");
+						fclose(fp);
+					}
+				}
+			}
+	
+			else if(argv[0] != NULL && historyMax<=100){ 
 				fp = fopen( history ,"a+");
 				for(i=0;i<argc;i++){
 					fprintf(fp,"%s " , argv[i]);
@@ -341,7 +380,33 @@ int main (int argc, char * argv[]) {
 			closedir(dir);
 		}
 		else if(!strcmp(argv[0] , "alias")){
+			if(argc ==1){
+				printf("alias Command \n");
+				for(i=0;i<aliasCnt;i++){
+					printf("%s" , alias[i]);
+				}
+			}
+			else{	
+				printf("%s ",aliasChar);
+				strcpy(STRING[aliasCnt].strs,aliasChar);
+				if(strstr(STRING[aliasCnt].strs ,"='") && strstr(STRING[aliasCnt].strs,"\0")){
+					
+					strcpy(STRING2[aliasCnt].strs,STRING[aliasCnt].strs);
+					i=1;
+					aliasCom[aliasCnt][0] = strtok(STRING2[aliasCnt].strs , "='");
+					while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
+						i++;
+					aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
+					if(strstr(aliasCom[aliasCnt][0]," ") !=NULL ){
+						continue;
+					}
+					alias[aliasCnt] = STRING[aliasCnt].strs;
+					aliasCnt++;
+					
+				}			
+			}
 		}
+		
 		else if(!strcmp(argv[0] ,"ln")){
 			if(argc != 3){
 				fprintf(stderr,"%s [path],[newPath]",argv[0]);
