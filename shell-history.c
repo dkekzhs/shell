@@ -5,17 +5,52 @@
 #include <sys/stat.h> 
 #include <sys/types.h> //파일 타입 확인하는거
 #include <dirent.h>
+#include <time.h> 
+#include <grp.h>  //gid
+#include <pwd.h>  //uid
+#include <fcntl.h> //ps
+#include <ctype.h> // ps
 
 #define bufSize 100
 
 const char *prompt = "Shell : " ;
+
+typedef struct strs{
+	char strs[64];
+}strs;
+
+int modeGetChar(struct stat sb, char * szPer){
+	int i=0;
+	static short permition[9] = {0400,0200,0100,0040,0020,0010,0004,0002,0001};
+	char RW[] = "rwxrwxrwx";
+	
+	if((sb.st_mode & S_IFMT)  ==S_IFDIR ){
+		szPer[0] ='d';
+		for(i=0;i<9;i++){
+			if(sb.st_mode & permition[i])
+				szPer[i+1] = RW[i];
+			else szPer[i+1] = '-';
+	}
+	}
+	else{
+		szPer[0] ='-';
+		for(i=0;i<9;i++){
+
+		if(sb.st_mode & permition[i])
+		       	szPer[i] =RW[i];
+		else szPer[i] ='-';
+		}
+	}
+	printf("%s",szPer);
+	return 0;
+}
 int printFile(char *name){
 	char buf[255];
 	FILE *fp;
-	int lineNumber =0;
+	int lineNumber =1;
 	fp = fopen(name , "r");
 	while(fgets(buf,255,fp) != NULL){
-		printf("%s ",buf);
+		printf("%d  %s",lineNumber++,buf);
 	}
 	fclose(fp);
 
@@ -24,39 +59,51 @@ int countLine(char *name){
 	FILE *fp;
 	char c;
 	int line =0;
-	fp = fopen(name,"r");
+	fp = fopen(name,"a+");
 	while((c=fgetc(fp))!=EOF)
 		if(c=='\n')line++;
 	fclose(fp);
 	return(line);
 }
+ 
 
 int main (int argc, char * argv[]) {
 	char cut[] = " \n";
 	char dirname[bufSize];
 	char * pathHome ,*his ="/history.txt";
-	char history[30]; 
+	char history[30];
 	char historyCntChar[5];
 	FILE *fp, *copy;
 	char *filename = NULL;
+	
+	int chkOneWrite =1;
+
+	int aliasCnt= 0;
+	char * alias[5], aliasChar[64], *aliasCom[5][64];
+	strs STRING[5] ,STRING2[5];
 
 	DIR * dir = NULL;
 	struct dirent * entry =NULL;
-	struct stat st; 
+	struct stat sb; 
 	int historyCnt = 0;
 	
-	int i,historyMax;
+	int i,j,historyMax;
 	
+
 	pathHome = getenv("HOME");
 	strcpy(history , pathHome);
 	strcat(history , his);
+	
+	
 	while(1){
 		char str[64];
-
+		chkOneWrite =1;
 		fputs(prompt, stdout);
 		fgets(str,sizeof(str) -1 ,stdin);
-		
+		strcpy(aliasChar,str);
+	
 		historyMax = countLine(history);
+	
 		if(strchr(str,'!')){			
 			argc =0;
 			char command[64];
@@ -70,7 +117,7 @@ int main (int argc, char * argv[]) {
 			if(historyCnt==0){ //atoi 오류 반환 0
 				continue;
 				}
-			if(historyCnt >= historyMax){
+			if(historyCnt > historyMax){
 				printf("히스토리 라인넘긴 숫자 \n");
 				continue;
 				}
@@ -80,21 +127,20 @@ int main (int argc, char * argv[]) {
 				if(historyCnt == lineNumber){
 					printf("%d번째 줄 : %s\n",historyCnt , buf);
 					strcpy(command, buf);
+					strcpy(aliasChar,buf);
 					break;
 				}	
 			}	
 			fclose(fp);	
-
 			argc =0;
 			argv[argc++] = strtok(command,cut);
-			
 			if(argv[0] == NULL)
 				continue;
 
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
-		
-			if(argv[0] != NULL && historyMax<=100){ 
+			
+			 if(argv[1] != NULL && historyMax<=100){ 
 				fp = fopen( history ,"a+");
 				for(i=0;i<argc;i++){
 					fprintf(fp,"%s " , argv[i]);
@@ -102,19 +148,54 @@ int main (int argc, char * argv[]) {
 				fprintf(fp,"\n");
 				fclose(fp);
 			}
+			if(aliasCnt>0){
+				char aliascopy[64];
+				for(i=0;i<aliasCnt;i++){
+					if(!strcmp(aliasCom[i][0],command)){
+						strcpy(aliascopy , aliasCom[i][1]);
+						argc =0;
+						argv[argc++] = strtok(aliascopy,cut);
+						while(argv[argc] = strtok(NULL,cut))
+							argc++;
+						if(argv[0] !=NULL && historyMax<=100){	
+						fp = fopen( history ,"a+");
+						fprintf(fp,"%s " , aliasCom[i][0]);
+						fprintf(fp,"\n");
+						fclose(fp);
+						}
+					}
+				}
+			}
 		}		
 		else{
 			argc =0;
 			argv[argc++] = strtok(str,cut);
-			
 			if(argv[0] == NULL)
 				continue;
 
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
-			
-		
-			if(argv[0] != NULL && historyMax<=100){ 
+			if(aliasCnt >0){
+				
+				char aliascopy[64];
+				for(i=0;i<aliasCnt;i++){
+					if(!strcmp(aliasCom[i][0],str)){
+						strcpy(aliascopy , aliasCom[i][1]);
+						argc =0;
+						argv[argc++] = strtok(aliascopy,cut);
+						while(argv[argc] = strtok(NULL,cut))
+							argc++;
+					if(argv[0] !=NULL && historyMax<=100){
+						fp = fopen( history ,"a+");
+						fprintf(fp,"%s " , aliasCom[i][0]);
+						fprintf(fp,"\n");
+						fclose(fp);
+					}
+					}
+				}
+			}
+	
+			else if(argv[0] != NULL && historyMax<=100){ 
 				fp = fopen( history ,"a+");
 				for(i=0;i<argc;i++){
 					fprintf(fp,"%s " , argv[i]);
@@ -207,18 +288,43 @@ int main (int argc, char * argv[]) {
 
 		}
 		else if(!strcmp(argv[0] , "ls")){
-
-			getcwd(dirname,bufSize);
-			if((dir = opendir(dirname)) ==NULL  ){
-				printf("디렉토리 오류 ");
+			char *pos;				
+			if(argc ==1){
+				getcwd(dirname,bufSize);
+				if((dir = opendir(dirname)) ==NULL  ){
+					printf("디렉토리 오류\n ");
+					continue;
+				}
 			}
+			else if(argc ==2){
+				if((dir = opendir(argv[1])) == NULL){
+					printf("그런 디렉토리 없어\n");
+					continue;
+				}
+			}
+			else{
+				printf("ls 인자 오류\n");
+			}	
 			while( (entry  =readdir(dir)) !=NULL){
-				if(entry ->d_ino !=0)
-					printf("%s     ", entry -> d_name);
-			}
+				memset(&sb,0,sizeof(struct stat));
+				lstat(entry -> d_name , &sb);
+				if(S_ISDIR(sb.st_mode)){
+					if(strncmp(".",entry -> d_name,1) ==0 || strncmp("..",entry -> d_name, 2)==0)
+						continue;
+					printf("%s   ",entry -> d_name);
+				}
+				else{
+					if(strncmp(".",entry -> d_name,1) ==0 || strncmp("..",entry -> d_name, 2)==0)
+						continue;	
+					printf("%s   " ,entry-> d_name);
+									
+				}
+			}	
 
 			closedir(dir);
 			printf("\n");
+			
+			
 		}
 		else if(!strcmp(argv[0] , "chmod")){
 			char *end;
@@ -283,10 +389,145 @@ int main (int argc, char * argv[]) {
 			closedir(dir);
 		}
 		else if(!strcmp(argv[0] , "alias")){
-			printf("%s ",argv[1]);
+			if(argc ==1){
+				printf("alias Command \n");
+				for(i=0;i<aliasCnt;i++){
+					printf("%s" , alias[i]);
+				}
+			}
+			else{	int i=1,chk = 0;
+				strcpy(STRING[aliasCnt].strs,aliasChar);
+				if(strstr(STRING[aliasCnt].strs ,"='") && strstr(STRING[aliasCnt].strs,"'\0")){
+					strcpy(STRING2[aliasCnt].strs,STRING[aliasCnt].strs);
+					i=1;
+					aliasCom[aliasCnt][0] = strtok(STRING2[aliasCnt].strs , "='");
+					
+					if(aliasCnt == 0){	
+					while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
+						i++;
+					aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
+					if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
+						continue;
+					}
+					alias[aliasCnt] = STRING[aliasCnt].strs;
+					aliasCnt++;
+					}
+					else{
+					for(j=0;j<aliasCnt;j++){ //이미 있는 단축어인지 확인
+						if(!strcmp(aliasCom[j][0] , (STRING2[aliasCnt].strs+6))){ //들어온단축어와 원래있는게 있으면
+							while(aliasCom[j][i] = strtok(NULL, "'\n")) //단축어 자리에 명령어만 바꿈
+								i++;
+							
+							if(strstr(aliasCom[j][0]," ") !=NULL || aliasCom[j][1] == NULL ){
+								continue;
+							}
+							alias[j] = STRING[j].strs; //전체 명령어 자리에도 바꿔줌
+							
+						}
+						else{
+							while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
+								i++;
+							aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
+							if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
+								continue;
+							}
 
-		}	
-	}
+							alias[aliasCnt] = STRING[aliasCnt].strs;
+							aliasCnt++;
+						}
+					}
+					}
+				
+				}
+			}			
+		}
+		
+		else if(!strcmp(argv[0] ,"ln")){
+			if(argc != 3){
+				fprintf(stderr,"%s [path],[newPath]",argv[0]);
+			}
+			else if(access(argv[1], F_OK)!=0){
+				fprintf(stderr,"%s is not exitsted\n",argv[1]);
+			}
+			else if(link(argv[1],argv[2])<0){
+				fprintf(stderr,"link error\n");
+			}
+			else{
+				printf("susses link\n");
+			}
+		}
+		else if(!strcmp(argv[0] ,"stat")){
+			if(argc != 2 ){
+				printf("Usage : %s <Pathname>\n",argv[0]);
+				continue;
+			}
+			if(lstat(argv[1] , &sb) ==-1){
+				printf("파일 오류\n");
+				continue;
+			}
+			printf("File : %s \n", argv[1]);
+			printf("size : %lld     ", (long long)sb.st_size);
+			printf("Blocks : %lld      " , (long long ) sb.st_blocks);
+			printf("I/O block : %ld    ", (long)sb.st_blksize);
+			switch(sb.st_mode & S_IFMT){
+				case S_IFBLK : printf("bloack device\n"); break;
+				case S_IFCHR : printf("character device\n"); break;
+				case S_IFDIR : printf("directiory\n"); break;
+				case S_IFIFO : printf("FIFO/pipe\n"); break;
+				case S_IFLNK : printf("symlink\n"); break;
+				case S_IFREG : printf("regular file\n"); break;
+				case S_IFSOCK : printf("socket\n"); break;
+				default : printf("unknown?\n"); break;
+			}
+			char szP[30];
+			memset(szP,0x00,sizeof(szP));
+			modeGetChar(sb,szP);
+			printf("Device : %ld     " ,(long)sb.st_dev);	
+			printf("I-node : %ld     ", (long) sb.st_ino);
+			printf("Link : %ld\n     ", (long) sb.st_nlink);
+			printf("Access : %lo", (unsigned long) sb.st_mode);
+			printf("Uid : ( %s, %d)", getpwuid(sb.st_gid) -> pw_name,sb.st_uid);
+			printf("Gid : ( %s, %d)\n" ,(getgrgid(sb.st_gid)) -> gr_name,sb.st_gid);
+			printf("Last status change : %s" ,ctime(&sb.st_ctime));
+			printf("Last file accress : %s" ,ctime(&sb.st_atime));
+			printf("Last file modification  : %s" ,ctime(&sb.st_mtime));
+		}
+		else if(!strcmp(argv[0] ,"ps")){
+			if(argc >=2 ){
+				printf("ps 인자 오류 \n");
+			}
+			else{
+			              
+                                pid_t pid, ppid;
+                                pid = getpid();
+                                ppid = getppid();
+                                char line[256],path[20];
+                               
+                                sprintf(path,"/proc/%d/status", pid);
+
+                                fp = fopen(path , "r");
+                                while(fgets(line,256,fp)!=NULL){
+                                        if(strstr(line , "Name")){
+						printf("%d " ,pid);
+						printf("%s\n",line);
+							}
+                                }
+                                fclose(fp);
+
+                                sprintf(path,"/proc/%d/status", ppid);
+
+                                fp = fopen(path , "r");
+                                while(fgets(line,256,fp)!=NULL){
+                                        if(strstr(line , "Name")){
+						printf("%d " ,ppid);
+						printf("%s\n",line);
+							}
+                                }
+				fclose(fp);
+                 
+			}
+		}
+	}	
 }
 
 
