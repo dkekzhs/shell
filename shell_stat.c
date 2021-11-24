@@ -529,6 +529,43 @@ int main (int argc, char * argv[]) {
 				printf("ps 인자 오류 \n");
 			}
 			else{
+			int fd,fd_self, chk;
+			char *tty,tty_self[10],ppath[1024],statpath[1024],buf[255],pid[64] ,name[64];
+			printf("PID   TTY   CMD\n");
+			dir = opendir("/proc");
+			fd_self = open("/proc/self/fd/0",O_RDONLY);
+			sprintf(tty_self,"%s",ttyname(fd_self));
+			while((entry = readdir(dir)) != NULL){
+				chk=1;
+				for(i=0;entry->d_name[i];i++){
+					if(!isdigit(entry->d_name[i])){ // 프로세스가 아닐때 
+						chk =0;
+						break;
+					}
+				}
+				 if(chk ==1){ 
+					sprintf(ppath,"/proc/%s/fd/0" ,entry ->d_name);
+					fd = open(ppath,O_RDONLY);
+					tty =ttyname(fd);
+					
+					if(tty !=NULL && strcmp(tty,tty_self) == 0){
+						sprintf(statpath,"/proc/%s/stat",entry ->d_name);
+						fp = fopen(statpath,"r");	
+						if(fp == NULL){
+							printf("프로세스 오픈 오류\n");
+						}
+						else{
+							fscanf(fp,"%s%s",pid,name);
+							name[strlen(name)-1] ='\0';
+							printf("%s %s %s\n",pid,tty,(name+1));
+						}
+					}		
+
+				 }
+				
+			}
+			
+			
 			}
 		}
 	}	
