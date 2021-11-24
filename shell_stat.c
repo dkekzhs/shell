@@ -72,7 +72,6 @@ int countLine(char *name){
 	}
 	return(line);
 }
- 
 
 int main (int argc, char * argv[]) {
 	char cut[] = " \n";
@@ -96,11 +95,14 @@ int main (int argc, char * argv[]) {
 	
 	int i,j,historyMax;
 	
+	char *tty,tty_self[10],ppath[1024],statpath[1024],pid[128] ,name[128]; //ps
 
 	pathHome = getenv("HOME");
+	
 	strcpy(history , pathHome);
 	strcat(history , "/history.txt");
 	historyPath = history;
+
 	
 	while(1){	
 		char str[64];
@@ -109,6 +111,8 @@ int main (int argc, char * argv[]) {
 		fgets(str,sizeof(str) -1 ,stdin);
 		strcpy(aliasChar,str);
 	
+		strcpy(history , pathHome);
+		strcat(history , "/history.txt");
 		historyMax = countLine(historyPath);
 		
 		printf("history : %s\n" , history);
@@ -124,7 +128,6 @@ int main (int argc, char * argv[]) {
 				continue;
 			}
 			strcpy(historyCntChar, argv[argc]);
-			printf("historyCnt =%d\n",historyCnt);
 			if(atoi(historyCntChar) == 0 ){ //atoi 오류 반환 0
 				printf("문자열 입력\n");
 				continue;
@@ -137,6 +140,7 @@ int main (int argc, char * argv[]) {
 				continue;
 			}
 			else{
+				printf("historyPath : %s\n",historyPath);
 				fp = fopen(historyPath,"r");
 				while(fgets(buf,255,fp) !=NULL){
 					lineNumber++;
@@ -528,14 +532,16 @@ int main (int argc, char * argv[]) {
 			if(argc >=2 ){
 				printf("ps 인자 오류 \n");
 			}
-			else{
+			else if(argc == 1){
+			DIR *psdir;
+			FILE *file;
 			int fd,fd_self, chk;
-			char *tty,tty_self[10],ppath[1024],statpath[1024],buf[255],pid[64] ,name[64];
 			printf("PID   TTY   CMD\n");
-			dir = opendir("/proc");
+			psdir = opendir("/proc");
 			fd_self = open("/proc/self/fd/0",O_RDONLY);
 			sprintf(tty_self,"%s",ttyname(fd_self));
-			while((entry = readdir(dir)) != NULL){
+			close(fd_self);
+			while((entry = readdir(psdir)) != NULL){
 				chk=1;
 				for(i=0;entry->d_name[i];i++){
 					if(!isdigit(entry->d_name[i])){ // 프로세스가 아닐때 
@@ -550,22 +556,23 @@ int main (int argc, char * argv[]) {
 					
 					if(tty !=NULL && strcmp(tty,tty_self) == 0){
 						sprintf(statpath,"/proc/%s/stat",entry ->d_name);
-						fp = fopen(statpath,"r");	
-						if(fp == NULL){
+						file = fopen(statpath,"r");	
+						if(file == NULL){
 							printf("프로세스 오픈 오류\n");
 						}
 						else{
-							fscanf(fp,"%s%s",pid,name);
+							fscanf(file,"%s%s",pid,name);
 							name[strlen(name)-1] ='\0';
 							printf("%s %s %s\n",pid,tty,(name+1));
+							fclose(file);
 						}
+						close(fd);
 					}		
 
 				 }
 				
 			}
-			
-			
+			closedir(psdir);
 			}
 		}
 	}	
