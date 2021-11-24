@@ -12,7 +12,6 @@
 #include <ctype.h> // ps
 
 #define bufSize 100
-
 const char *prompt = "Shell : " ;
 
 typedef struct strs{
@@ -49,6 +48,9 @@ int printFile(char *name){
 	FILE *fp;
 	int lineNumber =1;
 	fp = fopen(name , "r");
+	if(fp == NULL){
+		printf("히스토리아직 미생성\n");
+	}
 	while(fgets(buf,255,fp) != NULL){
 		printf("%d  %s",lineNumber++,buf);
 	}
@@ -59,10 +61,15 @@ int countLine(char *name){
 	FILE *fp;
 	char c;
 	int line =0;
-	fp = fopen(name,"a+");
+	fp = fopen(name,"r");
+	if(fp == NULL){
+		printf("히스토리 처음\n");
+	}
+	else{
 	while((c=fgetc(fp))!=EOF)
 		if(c=='\n')line++;
 	fclose(fp);
+	}
 	return(line);
 }
  
@@ -70,8 +77,8 @@ int countLine(char *name){
 int main (int argc, char * argv[]) {
 	char cut[] = " \n";
 	char dirname[bufSize];
-	char * pathHome ,*his ="/history.txt";
-	char history[30];
+	char * pathHome;
+	char history[64] ,* historyPath;
 	char historyCntChar[5];
 	FILE *fp, *copy;
 	char *filename = NULL;
@@ -92,45 +99,57 @@ int main (int argc, char * argv[]) {
 
 	pathHome = getenv("HOME");
 	strcpy(history , pathHome);
-	strcat(history , his);
+	strcat(history , "/history.txt");
+	historyPath = history;
 	
-	
-	while(1){
+	while(1){	
 		char str[64];
 		chkOneWrite =1;
 		fputs(prompt, stdout);
 		fgets(str,sizeof(str) -1 ,stdin);
 		strcpy(aliasChar,str);
 	
-		historyMax = countLine(history);
-	
-		if(strchr(str,'!')){			
+		historyMax = countLine(historyPath);
+		
+		printf("history : %s\n" , history);
+		printf("hisMax : %d\n",historyMax);
+		
+		if(strstr(str,"!")){			
 			argc =0;
 			char command[64];
-			argv[argc] = strtok(str," !");
+			argv[argc] = strtok(str,"!");
 			int lineNumber=0;
 			char buf[255];
-			if(argv[0] == NULL)
+			if(argv[0] == NULL ){
 				continue;
+			}
 			strcpy(historyCntChar, argv[argc]);
-			historyCnt = atoi(historyCntChar);
-			if(historyCnt==0){ //atoi 오류 반환 0
+			printf("historyCnt =%d\n",historyCnt);
+			if(atoi(historyCntChar) == 0 ){ //atoi 오류 반환 0
+				printf("문자열 입력\n");
 				continue;
-				}
+			}
+			else{ 
+				historyCnt = atoi(historyCntChar);
+			}
 			if(historyCnt > historyMax){
 				printf("히스토리 라인넘긴 숫자 \n");
 				continue;
+			}
+			else{
+				fp = fopen(historyPath,"r");
+				while(fgets(buf,255,fp) !=NULL){
+					lineNumber++;
+					if(historyCnt == lineNumber){
+						printf("%d번째 줄 : %s\n",historyCnt , buf);
+						strcpy(command, buf);
+						strcpy(aliasChar,command);
+						break;
+					}	
 				}
-			fp = fopen(history,"r");
-			while(fgets(buf,255,fp) !=NULL){
-				lineNumber++;
-				if(historyCnt == lineNumber){
-					printf("%d번째 줄 : %s\n",historyCnt , buf);
-					strcpy(command, buf);
-					strcpy(aliasChar,buf);
-					break;
-				}	
-			}	
+		
+		
+				
 			fclose(fp);	
 			argc =0;
 			argv[argc++] = strtok(command,cut);
@@ -139,16 +158,8 @@ int main (int argc, char * argv[]) {
 
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
-			
-			 if(argv[0] != NULL && historyMax<=100){ 
-				fp = fopen( history ,"a+");
-				for(i=0;i<argc;i++){
-					fprintf(fp,"%s " , argv[i]);
-				}
-				fprintf(fp,"\n");
-				fclose(fp);
-			}
-			if(aliasCnt>0){
+			printf("command : %s\n",command);
+			if(aliasCnt>0 && chkOneWrite ==1){
 				char aliascopy[64];
 				for(i=0;i<aliasCnt;i++){
 					if(!strcmp(aliasCom[i][0],command)){
@@ -157,14 +168,26 @@ int main (int argc, char * argv[]) {
 						argv[argc++] = strtok(aliascopy,cut);
 						while(argv[argc] = strtok(NULL,cut))
 							argc++;
-						if(argv[0] !=NULL && historyMax<=100){	
-						fp = fopen( history ,"a+");
-						fprintf(fp,"%s " , aliasCom[i][0]);
-						fprintf(fp,"\n");
-						fclose(fp);
-						}
+					
+						 if(argv[0] != NULL && historyMax<=100 ){ 
+							fp = fopen(historyPath,"a+");
+							fprintf(fp, "%s\n", aliasCom[i][0]);
+							fclose(fp);
+							chkOneWrite =0;
+						 }
 					}
 				}
+			}
+
+			 if(argv[0] != NULL && historyMax<=100 &&chkOneWrite ==1){ 
+				fp = fopen(historyPath ,"a+");
+				for(i=0;i<argc;i++){
+					fprintf(fp,"%s " , argv[i]);
+				}
+				fprintf(fp,"\n");
+				fclose(fp);
+				chkOneWrite =0;
+			}
 			}
 		}		
 		else{
@@ -175,8 +198,8 @@ int main (int argc, char * argv[]) {
 
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
-			if(aliasCnt >0){
-				
+			printf("str : %s\n",str);
+			if(aliasCnt >0 && chkOneWrite ==1){	
 				char aliascopy[64];
 				for(i=0;i<aliasCnt;i++){
 					if(!strcmp(aliasCom[i][0],str)){
@@ -185,23 +208,25 @@ int main (int argc, char * argv[]) {
 						argv[argc++] = strtok(aliascopy,cut);
 						while(argv[argc] = strtok(NULL,cut))
 							argc++;
-					if(argv[0] !=NULL && historyMax<=100){
-						fp = fopen( history ,"a+");
-						fprintf(fp,"%s " , aliasCom[i][0]);
-						fprintf(fp,"\n");
+
+						if(argv[0] != NULL && historyMax<=100 ){ 
+						fp = fopen( historyPath ,"a+");
+						fprintf(fp,"%s\n" , aliasCom[i][0]);
 						fclose(fp);
-					}
+						chkOneWrite =0;
+						}
 					}
 				}
+					
 			}
-	
-			else if(argv[0] != NULL && historyMax<=100){ 
-				fp = fopen( history ,"a+");
+			if(argv[0] != NULL && historyMax<=100 && chkOneWrite ==1){ 
+				fp = fopen(historyPath ,"a+");
 				for(i=0;i<argc;i++){
 					fprintf(fp,"%s " , argv[i]);
 				}
 				fprintf(fp,"\n");
 				fclose(fp);
+				chkOneWrite =0;
 			}
 		}
 		if(!strcmp(argv[0], "exit"))		
@@ -217,7 +242,7 @@ int main (int argc, char * argv[]) {
 
 		}
 		else if(!strcmp(argv[0] ,"history")){
-			printFile(history);
+			printFile(historyPath);
 		}
 		else if(!strcmp(argv[0] ,"cd")){
 			if(argc <=1){
@@ -373,18 +398,22 @@ int main (int argc, char * argv[]) {
 				printf("폴더는 복사가 안됨\n");
 			}
 			else{
-				fp = fopen(argv[1] , "r");
-				if(fp == NULL){		
-					printf("파일이 없음 \n");
+				int fdin,fout;
+				fdin = open(argv[1] , O_RDONLY);
+				if(fdin == -1){		
+					printf("파일 열기 에러 \n");
 					continue;
 				}
-				copy = fopen(argv[2] , "w");
-					while(ret = fread(buffer, 1 , sizeof(buffer), fp)){
-						fwrite(buffer,1,ret,copy);
+				fout = open(argv[2] , O_WRONLY | O_CREAT | O_TRUNC, sb.st_mode &(S_IRWXU | S_IRWXG | S_IRWXO));
+				if(fout ==-1){
+					printf("복사파일 에러\n");
+				}	
+				while((ret = read(fdin,buffer,1024)) >0){
+						write(fout,buffer,ret);
 					}
 			
-			fclose(fp);
-			fclose(copy);
+			close(fdin);
+			close(fout);
 			}
 			closedir(dir);
 		}
@@ -395,13 +424,13 @@ int main (int argc, char * argv[]) {
 					printf("%s" , alias[i]);
 				}
 			}
-			else{	int i=1,chk = 0;
+			else{	int i=1,chkOneAlias = 1;
+				printf("aliasChar :%s\n" , aliasChar);
 				strcpy(STRING[aliasCnt].strs,aliasChar);
 				if(strstr(STRING[aliasCnt].strs ,"='") && strstr(STRING[aliasCnt].strs,"'\0")){
 					strcpy(STRING2[aliasCnt].strs,STRING[aliasCnt].strs);
 					i=1;
 					aliasCom[aliasCnt][0] = strtok(STRING2[aliasCnt].strs , "='");
-					
 					if(aliasCnt == 0){	
 					while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
 						i++;
@@ -412,8 +441,8 @@ int main (int argc, char * argv[]) {
 					alias[aliasCnt] = STRING[aliasCnt].strs;
 					aliasCnt++;
 					}
-					else{
-					for(j=0;j<aliasCnt;j++){ //이미 있는 단축어인지 확인
+					else{ //처음 아닐 때 
+ 					for(j=0;j<aliasCnt;j++){ //이미 있는 단축어인지 확인
 						if(!strcmp(aliasCom[j][0] , (STRING2[aliasCnt].strs+6))){ //들어온단축어와 원래있는게 있으면
 							while(aliasCom[j][i] = strtok(NULL, "'\n")) //단축어 자리에 명령어만 바꿈
 								i++;
@@ -421,21 +450,24 @@ int main (int argc, char * argv[]) {
 							if(strstr(aliasCom[j][0]," ") !=NULL || aliasCom[j][1] == NULL ){
 								continue;
 							}
-							alias[j] = STRING[j].strs; //전체 명령어 자리에도 바꿔줌
+							strcpy(STRING[j].strs,aliasChar);
+							chkOneAlias =0;
+						}
 							
-						}
-						else{
-							while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
-								i++;
-							aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
-							if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
-								continue;
-							}
-
-							alias[aliasCnt] = STRING[aliasCnt].strs;
-							aliasCnt++;
-						}
+						
 					}
+					if(chkOneAlias == 1){
+						i=1;							
+						while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
+							i++;
+						aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
+						if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
+							continue;
+						}
+						alias[aliasCnt] = STRING[aliasCnt].strs;
+						aliasCnt++;
+					}
+				
 					}
 				
 				}
@@ -497,7 +529,6 @@ int main (int argc, char * argv[]) {
 				printf("ps 인자 오류 \n");
 			}
 			else{
-			
 			}
 		}
 	}	
