@@ -95,7 +95,7 @@ int main (int argc, char * argv[]) {
 	
 	int i,j,historyMax;
 	
-	char *tty,tty_self[10],ppath[512],statpath[512],pid[10] ,name[30]; //ps
+	char *tty,tty_self[10],ppath[512],statpath[512],pid[10] ,name[30]; //ps pid 와 name 중 메모리 침범 있음 
 	DIR *psdir;		
 	FILE *file;
 	int fd,fd_self, chk;
