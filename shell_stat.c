@@ -11,7 +11,7 @@
 #include <fcntl.h> //ps
 #include <ctype.h> // ps
 
-#define bufSize 100
+#define dirBufSize 100 //dirname 사이즈
 const char *prompt = "Shell : " ;
 
 typedef struct strs{
@@ -75,7 +75,7 @@ int countLine(char *name){
 
 int main (int argc, char * argv[]) {
 	char cut[] = " \n";
-	char dirname[bufSize];
+	char dirname[dirBufSize];
 	char * pathHome;
 	char history[64] ,* historyPath;
 	char historyCntChar[5];
@@ -95,11 +95,12 @@ int main (int argc, char * argv[]) {
 	
 	int i,j,historyMax;
 	
-	char *tty,tty_self[10],ppath[512],statpath[512],pid[10] ,name[30]; //ps pid 와 name 중 메모리 침범 있음 
-	DIR *psdir;		
+	char *tty,tty_self[30],ppath[1024],statpath[1024],name[64];
+	int psid;
+	DIR *psdir;
 	FILE *file;
 	int fd,fd_self, chk;
-	
+
 	pathHome = getenv("HOME");
 	
 	strcpy(history , pathHome);
@@ -114,7 +115,7 @@ int main (int argc, char * argv[]) {
 		fgets(str,sizeof(str) -1 ,stdin);
 		strcpy(aliasChar,str);
 	
-		historyMax = countLine(historyPath); // !문자열 입력 후 hustiryPath가 바껴서 counLine 하기 전에 주소 다시 복사 
+		historyMax = countLine(historyPath);
 		
 		printf("history : %s\n" , history);
 		printf("hisMax : %d\n",historyMax);
@@ -239,7 +240,7 @@ int main (int argc, char * argv[]) {
 
 
 		if(!strcmp(argv[0],"pwd")){
-			if(!getcwd(dirname,bufSize))	
+			if(!getcwd(dirname,dirBufSize))	
 				printf("파일 위치 모름\n");
 
 			else
@@ -320,9 +321,11 @@ int main (int argc, char * argv[]) {
 		else if(!strcmp(argv[0] , "ls")){
 			char *pos;				
 			if(argc ==1){
-				if(!getcwd(dirname,bufSize)){
-					printf("디렉토리 오류 \n");
-				}else{
+				if(!getcwd(dirname,dirBufSize)){
+					printf("getcwd ls error\n");
+						continue;
+				}
+				else{
 					if((dir = opendir(dirname)) ==NULL  ){
 						printf("디렉토리 오류\n ");
 						continue;
@@ -398,7 +401,7 @@ int main (int argc, char * argv[]) {
 				printf("cp 인자 오류 \n");
 				continue;
 			}
-			char buffer[512];
+			char buffer[1024];
 			int ret;
 			
 			dir = opendir(argv[1]);
@@ -416,7 +419,7 @@ int main (int argc, char * argv[]) {
 				if(fout ==-1){
 					printf("복사파일 에러\n");
 				}	
-				while((ret = read(fdin,buffer,512)) >0){
+				while((ret = read(fdin,buffer,1024)) >0){
 						write(fout,buffer,ret);
 					}
 			
@@ -439,11 +442,11 @@ int main (int argc, char * argv[]) {
 					strcpy(STRING2[aliasCnt].strs,STRING[aliasCnt].strs);
 					i=1;
 					aliasCom[aliasCnt][0] = strtok(STRING2[aliasCnt].strs , "='");
-					if(aliasCnt == 0){
+					if(aliasCnt == 0){	
 					while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
 						i++;
 					aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
-					if(strstr(aliasCom[aliasCnt][0]," ") || aliasCom[aliasCnt][1] == NULL ){
+					if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
 						continue;
 					}
 					alias[aliasCnt] = STRING[aliasCnt].strs;
@@ -554,19 +557,20 @@ int main (int argc, char * argv[]) {
 					sprintf(ppath,"/proc/%s/fd/0" ,entry ->d_name);
 					fd = open(ppath,O_RDONLY);
 					tty =ttyname(fd);
-					
 					if(tty !=NULL && strcmp(tty,tty_self) == 0){
 						sprintf(statpath,"/proc/%s/stat",entry ->d_name);
 						file = fopen(statpath,"r");	
 						if(file == NULL){
 							printf("프로세스 오픈 오류\n");
 						}
-						else{
-							fscanf(file,"%s%s",pid,name);
-							name[strlen(name)-1] ='\0';
-							printf("%s %s %s\n",pid,tty,(name+1));
-							fclose(file);
+						else{	
+							fscanf(file,"%d %s",&psid , name);
+							name[strlen(name)-1] = '\0';
+							printf("%d  %s  %s\n",psid,tty,name+1);
+						
 						}
+
+							fclose(file);
 						close(fd);
 					}		
 
@@ -578,7 +582,6 @@ int main (int argc, char * argv[]) {
 		}
 	}	
 }
-
 
 
 
