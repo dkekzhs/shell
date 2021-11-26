@@ -119,8 +119,6 @@ int main (int argc, char * argv[]) {
 	
 		historyMax = countLine(historyPath);
 		
-		printf("history : %s\n" , history);
-		printf("hisMax : %d\n",historyMax);
 		
 		if(strstr(str,"!")){			
 			argc =0;
@@ -206,7 +204,6 @@ int main (int argc, char * argv[]) {
 
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
-			printf("str : %s\n",str);
 			if(aliasCnt >0 && chkOneWrite ==1){	
 				char aliascopy[64];
 				for(i=0;i<aliasCnt;i++){
@@ -295,7 +292,6 @@ int main (int argc, char * argv[]) {
 
 		}
 		else if(!strcmp(argv[0], "cat")){
-			int lineNumber =0;
 			int cnt =1;
 			char buf[255];
 			if(argc <=1){
@@ -312,9 +308,10 @@ int main (int argc, char * argv[]) {
 					}
 					else{	
 						while(fgets(buf,255,fp) != NULL){
-						printf("%d %s ", lineNumber++,buf);
+						printf(" %s ",buf);
 						}
 						cnt++;
+						printf("\n");
 					}
 				}	
 			}
@@ -403,7 +400,7 @@ int main (int argc, char * argv[]) {
 				printf("cp 인자 오류 \n");
 				continue;
 			}
-			char buffer[1024];
+			char cpBuf[256];
 			int ret;
 			
 			dir = opendir(argv[1]);
@@ -421,8 +418,8 @@ int main (int argc, char * argv[]) {
 				if(fout ==-1){
 					printf("복사파일 에러\n");
 				}	
-				while((ret = read(fdin,buffer,1024)) >0){
-						write(fout,buffer,ret);
+				while((ret = read(fdin,cpBuf,256)) >0){
+						write(fout,cpBuf,ret);
 					}
 			
 			close(fdin);
@@ -525,6 +522,7 @@ int main (int argc, char * argv[]) {
 				default : printf("unknown?\n"); break;
 			}
 			char modeChar[30];
+			memset(modeChar,0x00,sizeof(modeChar));
 			modeGetChar(sb,modeChar);
 			printf("Device : %ld     " ,(long)sb.st_dev);	
 			printf("I-node : %ld     ", (long) sb.st_ino);
