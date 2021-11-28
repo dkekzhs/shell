@@ -87,8 +87,8 @@ int main (int argc, char * argv[]) {
 	int chkOneWrite =1;
 
 	int aliasCnt= 0;
-	char * alias[5], aliasChar[64], *aliasCom[5][64];
-	strs STRING[5] ,STRING2[5];
+	char * alias[6], aliasChar[64], *aliasCom[6][1];
+	strs STRING[6] ,STRING2[6];
 
 	DIR * dir = NULL;
 	struct dirent * entry =NULL;
@@ -318,7 +318,6 @@ int main (int argc, char * argv[]) {
 
 		}
 		else if(!strcmp(argv[0] , "ls")){
-			char *pos;				
 			if(argc ==1){
 				if(!getcwd(dirname,dirBufSize)){
 					printf("getcwd ls error\n");
@@ -339,6 +338,7 @@ int main (int argc, char * argv[]) {
 			}
 			else{
 				printf("ls 인자 오류\n");
+				continue;
 			}	
 			while( (entry  =readdir(dir)) !=NULL){
 				memset(&sb,0,sizeof(struct stat));
@@ -437,7 +437,7 @@ int main (int argc, char * argv[]) {
 			else{	int i=1,chkOneAlias = 1;
 				printf("aliasChar :%s\n" , aliasChar);
 				strcpy(STRING[aliasCnt].strs,aliasChar);
-				if(strstr(STRING[aliasCnt].strs ,"='") && strstr(STRING[aliasCnt].strs,"'\0")){
+				if(strstr(STRING[aliasCnt].strs ,"='") && strstr(STRING[aliasCnt].strs,"'\0") ){
 					strcpy(STRING2[aliasCnt].strs,STRING[aliasCnt].strs);
 					i=1;
 					aliasCom[aliasCnt][0] = strtok(STRING2[aliasCnt].strs , "='");
@@ -445,12 +445,13 @@ int main (int argc, char * argv[]) {
 					while(aliasCom[aliasCnt][i] = strtok(NULL, "'\n"))
 						i++;
 					aliasCom[aliasCnt][0] = (STRING2[aliasCnt].strs+6);
-					if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
-						continue;
-					}
+						if(strstr(aliasCom[aliasCnt][0]," ") !=NULL || aliasCom[aliasCnt][1] == NULL ){
+							continue;
+						}
 					alias[aliasCnt] = STRING[aliasCnt].strs;
 					aliasCnt++;
 					}
+
 					else{ //처음 아닐 때 
  					for(j=0;j<aliasCnt;j++){ //이미 있는 단축어인지 확인
 						if(!strcmp(aliasCom[j][0] , (STRING2[aliasCnt].strs+6))){ //들어온단축어와 원래있는게 있으면
@@ -475,7 +476,12 @@ int main (int argc, char * argv[]) {
 							continue;
 						}
 						alias[aliasCnt] = STRING[aliasCnt].strs;
-						aliasCnt++;
+						if(aliasCnt <5){
+							aliasCnt++;
+						}
+						else{
+							continue;
+						}
 					}
 				
 					}
