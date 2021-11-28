@@ -51,7 +51,7 @@ int printFile(char *name){
 	int lineNumber =1;
 	fp = fopen(name , "r");
 	if(fp == NULL){
-		printf("히스토리아직 미생성\n");
+		printf("히스토리 없음\n");
 	}
 	while(fgets(buf,256,fp) != NULL){
 		printf("%d  %s",lineNumber++,buf);
@@ -65,7 +65,7 @@ int countLine(char *name){
 	int line =0;
 	fp = fopen(name,"r");
 	if(fp == NULL){
-		printf("히스토리 처음\n");
+		printf("히스토리 생성\n");
 	}
 	else{
 	while((c=fgetc(fp))!=EOF)
@@ -142,7 +142,6 @@ int main (int argc, char * argv[]) {
 				continue;
 			}
 			else{
-				printf("historyPath : %s\n",historyPath);
 				fp = fopen(historyPath,"r");
 				while(fgets(hisBuf,256,fp) !=NULL){
 					lineNumber++;
@@ -164,7 +163,6 @@ int main (int argc, char * argv[]) {
 
 			while(argv[argc] = strtok(NULL, cut))
 				argc++;
-			printf("command : %s\n",command);
 			if(aliasCnt>0 && chkOneWrite ==1){
 				char aliascopy[64];
 				for(i=0;i<aliasCnt;i++){
@@ -391,7 +389,7 @@ int main (int argc, char * argv[]) {
 				printf("권한 바꾸기  실패\n");
 			}
 			else{
-				printf("권한 바꾸끼 성공 ^^\n");
+				printf("권한 바꾸끼 성공\n");
 			}
 		
 		}
@@ -435,7 +433,6 @@ int main (int argc, char * argv[]) {
 				}
 			}
 			else{	int i=1,chkOneAlias = 1;
-				printf("aliasChar :%s\n" , aliasChar);
 				strcpy(STRING[aliasCnt].strs,aliasChar);
 				if(strstr(STRING[aliasCnt].strs ,"='") && strstr(STRING[aliasCnt].strs,"'\0") ){
 					strcpy(STRING2[aliasCnt].strs,STRING[aliasCnt].strs);
@@ -492,16 +489,18 @@ int main (int argc, char * argv[]) {
 		
 		else if(!strcmp(argv[0] ,"ln")){
 			if(argc != 3){
-				fprintf(stderr,"%s [path],[newPath]",argv[0]);
+				printf("%s [파일],[뉴파일]으로 입력\n",argv[0]);
+				continue;
 			}
 			else if(access(argv[1], F_OK)!=0){
-				fprintf(stderr,"%s is not exitsted\n",argv[1]);
+				printf("%s 파일 없음\n",argv[1]);
+				continue;
 			}
 			else if(link(argv[1],argv[2])<0){
-				fprintf(stderr,"link error\n");
+				printf("링크 에러\n");
 			}
 			else{
-				printf("susses link\n");
+				printf("링크 성공\n");
 			}
 		}
 		else if(!strcmp(argv[0] ,"stat")){
@@ -534,7 +533,7 @@ int main (int argc, char * argv[]) {
 			printf("I-node : %ld     ", (long) sb.st_ino);
 			printf("Link : %ld\n     ", (long) sb.st_nlink);
 			printf("Access : %lo", (unsigned long) sb.st_mode);
-			printf("Uid : ( %s, %d)", getpwuid(sb.st_gid) -> pw_name,sb.st_uid);
+			printf("Uid : ( %s, %d)", getpwuid(sb.st_uid) -> pw_name,sb.st_uid);
 			printf("Gid : ( %s, %d)\n" ,(getgrgid(sb.st_gid)) -> gr_name,sb.st_gid);
 			printf("Last status change : %s" ,ctime(&sb.st_ctime));
 			printf("Last file accress : %s" ,ctime(&sb.st_atime));
