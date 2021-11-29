@@ -398,7 +398,7 @@ int main (int argc, char * argv[]) {
 				printf("cp 인자 오류 \n");
 				continue;
 			}
-			char cpBuf[256];
+			char cpBuf[2048];
 			int ret;
 			
 			dir = opendir(argv[1]);
@@ -412,11 +412,13 @@ int main (int argc, char * argv[]) {
 					printf("파일 열기 에러 \n");
 					continue;
 				}
-				fout = open(argv[2] , O_WRONLY | O_CREAT | O_TRUNC, sb.st_mode &(S_IRWXU | S_IRWXG | S_IRWXO));
+				stat(argv[1] , &sb);
+				fout = open(argv[2] , O_WRONLY | O_CREAT | O_TRUNC, sb.st_mode);
 				if(fout ==-1){
 					printf("복사파일 에러\n");
+					continue;
 				}	
-				while((ret = read(fdin,cpBuf,256)) >0){
+				while((ret = read(fdin,cpBuf,2048)) >0){
 						write(fout,cpBuf,ret);
 					}
 			
@@ -586,6 +588,7 @@ int main (int argc, char * argv[]) {
 		}
 	}	
 }
+
 
 
 
