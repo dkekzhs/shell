@@ -76,7 +76,7 @@ int countLine(char *name){
 }
 
 int main (int argc, char * argv[]) {
-	char cut[] = " \n";
+	char cut[5] = " \n";
 	char dirname[dirBufSize];
 	char * pathHome;
 	char history[64] ,* historyPath;
@@ -87,7 +87,7 @@ int main (int argc, char * argv[]) {
 	int chkOneWrite =1;
 
 	int aliasCnt= 0;
-	char * alias[6], aliasChar[64], *aliasCom[6][1];
+	char * alias[6], aliasChar[64], *aliasCom[6][3];
 	strs STRING[6] ,STRING2[6];
 
 	DIR * dir = NULL;
@@ -115,8 +115,11 @@ int main (int argc, char * argv[]) {
 		chkOneWrite =1;
 		fputs(prompt, stdout);
 		fgets(str,sizeof(str) -1 ,stdin);
-		strcpy(aliasChar,str);
-	
+		
+		if(strstr(str , "alias")){
+			strcpy(aliasChar,str);
+		}
+
 		historyMax = countLine(historyPath);
 		
 		
@@ -148,7 +151,9 @@ int main (int argc, char * argv[]) {
 					if(historyCnt == lineNumber){
 						printf("%d번째 줄 : %s\n",historyCnt , hisBuf);
 						strcpy(command, hisBuf);
+						if(strstr(command,"alias")){
 						strcpy(aliasChar,command);
+						}
 						break;
 					}	
 				}
@@ -317,15 +322,9 @@ int main (int argc, char * argv[]) {
 		}
 		else if(!strcmp(argv[0] , "ls")){
 			if(argc ==1){
-				if(!getcwd(dirname,dirBufSize)){
-					printf("getcwd ls error\n");
-						continue;
-				}
-				else{
-					if((dir = opendir(dirname)) ==NULL  ){
-						printf("디렉토리 오류\n ");
-						continue;
-					}
+				if((dir = opendir(".")) ==NULL  ){
+					printf("디렉토리 오류\n ");
+				continue;
 				}
 			}
 			else if(argc ==2){
@@ -588,7 +587,3 @@ int main (int argc, char * argv[]) {
 		}
 	}	
 }
-
-
-
-
