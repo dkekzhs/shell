@@ -101,7 +101,7 @@ int main (int argc, char * argv[]) {
 	int psid;
 	DIR *psdir;
 	FILE *file;
-	int fd,fd_self, chk;
+	int fd,fdSelf, chk;
 
 	pathHome = getenv("HOME");
 	
@@ -242,19 +242,27 @@ int main (int argc, char * argv[]) {
 
 
 		if(!strcmp(argv[0],"pwd")){
-			if(!getcwd(dirname,dirBufSize))	
+			if(!getcwd(dirname,dirBufSize)){
 				printf("파일 위치 모름\n");
-
-			else
+				continue;
+			}
+			else{
 				printf("%s\n",dirname);
 
+			}
 		}
 		else if(!strcmp(argv[0] ,"history")){
 			printFile(historyPath);
 		}
 		else if(!strcmp(argv[0] ,"cd")){
 			if(argc <=1){
-				chdir(pathHome);
+				if(chdir(pathHome) == 0){
+					printf("cd  : %s\n",pathHome);
+				}
+				else{
+					printf("cd 에러\n");
+					continue;
+				}
 			}
 			else if(argc ==2){
 				if(chdir(argv[1])){
@@ -268,7 +276,7 @@ int main (int argc, char * argv[]) {
 		}
 		else if(!strcmp(argv[0] , "mkdir")){
 			if(argc ==1){
-				printf("mkdir 빈칸\n" );
+				printf("mkdir 폴더로 입력\n" );
 			}
 
 			else if(argc ==2){	
@@ -282,6 +290,7 @@ int main (int argc, char * argv[]) {
 		else if(!strcmp(argv[0],"rm")){
 			if(argc ==1){
 				printf("빈칸 입력\n");
+				continue;
 			}
 			int result =0;
 			filename = argv[1];
@@ -365,9 +374,11 @@ int main (int argc, char * argv[]) {
 			
 			if(argc != 3){
 				printf("chmod 파일이름 명령어8진수 순서로  입력\n");
+				continue;
 			}
 			else if(access(argv[2] ,F_OK)!=0){
 				printf("chmod 할 파일존재없음\n");
+				continue;
 			}
 			
 			if(strchr(argv[1],'8') || strchr(argv[1],'9')){
@@ -506,7 +517,7 @@ int main (int argc, char * argv[]) {
 		}
 		else if(!strcmp(argv[0] ,"stat")){
 			if(argc != 2 ){
-				printf("Usage : %s <Pathname>\n",argv[0]);
+				printf("Usage : %s [파일이름]\n",argv[0]);
 				continue;
 			}
 			if(lstat(argv[1] , &sb) ==-1){
@@ -547,9 +558,9 @@ int main (int argc, char * argv[]) {
 			else if(argc == 1){
 			printf("PID   TTY   CMD\n");
 			psdir = opendir("/proc");
-			fd_self = open("/proc/self/fd/0",O_RDONLY);
-			sprintf(tty_self,"%s",ttyname(fd_self));
-			close(fd_self);
+			fdSelf = open("/proc/self/fd/0",O_RDONLY);
+			sprintf(tty_self,"%s",ttyname(fdSelf));
+			close(fdSelf);
 			while((entry = readdir(psdir)) != NULL){
 				chk=1;
 				for(i=0;entry->d_name[i];i++){
@@ -587,3 +598,8 @@ int main (int argc, char * argv[]) {
 		}
 	}	
 }
+
+
+
+
+
