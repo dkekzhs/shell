@@ -189,7 +189,12 @@ int main (int argc, char * argv[]) {
 			 if(argv[0] != NULL && historyMax<= hisMax &&chkOneWrite ==1){ 
 				fp = fopen(historyPath ,"a+");
 				for(i=0;i<argc;i++){
-					fprintf(fp,"%s ", argv[i]);
+					if(i +1 == argc){
+						fprintf(fp,"%s",argv[i]);
+					}
+					else{
+						fprintf(fp,"%s " , argv[i]);
+					}
 				}
 				fprintf(fp,"\n");
 				fclose(fp);
@@ -228,7 +233,12 @@ int main (int argc, char * argv[]) {
 			if(argv[0] != NULL && historyMax<= hisMax && chkOneWrite ==1){ 
 				fp = fopen(historyPath ,"a+");
 				for(i=0;i<argc;i++){
-					fprintf(fp,"%s " , argv[i]);
+					if(i +1 == argc){
+						fprintf(fp,"%s",argv[i]);
+					}
+					else{
+						fprintf(fp,"%s " , argv[i]);
+					}
 				}
 				fprintf(fp,"\n");
 				fclose(fp);
