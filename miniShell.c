@@ -332,6 +332,8 @@ int main (int argc, char * argv[]) {
 						}
 						cnt++;
 						printf("\n");
+						fclose(fp);
+
 					}
 				}	
 			}
